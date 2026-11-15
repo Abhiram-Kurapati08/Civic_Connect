@@ -16,6 +16,7 @@ import { CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_LABELS } from "@/
 import { apiGet, apiPost, ApiError } from "@/lib/api";
 import { fileToCompressedDataUrl } from "@/lib/media";
 import { useLocality } from "@/lib/locality-context";
+import { useLanguage } from "@/lib/language-context";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useMe } from "@/lib/useAuth";
 import type { Category, ComplaintDetail } from "@/lib/types";
@@ -27,6 +28,7 @@ const MAX_PHOTOS = 3;
 export default function Report() {
   const { data: user, isLoading: meLoading } = useMe();
   const { selection, center } = useLocality();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -41,7 +43,7 @@ export default function Report() {
   const [submitting, setSubmitting] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(locationSearch, 600);
+  const debouncedSearch = useDebouncedValue(locationSearch, 350);
 
   const search = useQuery({
     queryKey: ["reportGeoSearch", debouncedSearch],
@@ -70,12 +72,12 @@ export default function Report() {
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <EmptyState
           icon={MapPin}
-          title="Sign in to report an issue"
-          description="Reporting needs an account so the ward office can follow up with the right person. Browsing the map stays open to everyone."
+          title={t("Sign in to report an issue")}
+          description={t("Reporting needs an account so the ward office can follow up with the right person. Browsing the map stays open to everyone.")}
           action={
             <div className="flex gap-2">
-              <Button render={<Link to="/login?next=/report" />} data-testid="report-signin-cta">Sign in</Button>
-              <Button variant="outline" render={<Link to="/register?next=/report" />} data-testid="report-register-cta">Create account</Button>
+              <Button render={<Link to="/login?next=/report" />} data-testid="report-signin-cta">{t("Sign in")}</Button>
+              <Button variant="outline" render={<Link to="/register?next=/report" />} data-testid="report-register-cta">{t("Create account")}</Button>
             </div>
           }
         />
@@ -85,17 +87,17 @@ export default function Report() {
 
   function validateStep0(): boolean {
     const next: Record<string, string> = {};
-    if (title.trim().length < 10) next.title = "Give the issue a clear title of at least 10 characters";
-    if (description.trim().length < 20) next.description = "Describe the problem in at least 20 characters so the desk can act on it";
-    if (!category) next.category = "Pick the category that fits best";
+    if (title.trim().length < 10) next.title = t("Give the issue a clear title of at least 10 characters");
+    if (description.trim().length < 20) next.description = t("Describe the problem in at least 20 characters so the desk can act on it");
+    if (!category) next.category = t("Pick the category that fits best");
     setErrors(next);
     return Object.keys(next).length === 0;
   }
 
   function validateStep1(): boolean {
     const next: Record<string, string> = {};
-    if (!selection) next.locality = "Choose your locality first — it routes the complaint";
-    if (!position) next.position = "Pin the exact spot on the map: click the map or use your GPS location";
+    if (!selection) next.locality = t("Choose your locality first — it routes the complaint");
+    if (!position) next.position = t("Pin the exact spot on the map: click the map or use your GPS location");
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -173,11 +175,11 @@ export default function Report() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <Button variant="ghost" size="sm" render={<Link to="/explore" />}>
-        <ArrowLeft className="size-4" /> Back to explore
+        <ArrowLeft className="size-4" /> {t("Back to explore")}
       </Button>
-      <h1 className="mt-3 font-heading text-2xl font-bold text-[#172B3A]">Report an issue</h1>
+      <h1 className="mt-3 font-heading text-2xl font-bold text-[#172B3A]">{t("Report an issue")}</h1>
       <p className="mt-1 text-sm text-[#52656F]">
-        A precise report gets fixed faster. Two minutes is all it takes.
+        {t("A precise report gets fixed faster. Two minutes is all it takes.")}
       </p>
 
       {/* Stepper */}
@@ -195,7 +197,7 @@ export default function Report() {
               {index < step ? <Check className="size-3.5" /> : index + 1}
             </span>
             <span className={cn("hidden text-xs font-semibold sm:block", index === step ? "text-[#172B3A]" : "text-[#52656F]")}>
-              {label}
+              {t(label)}
             </span>
             {index < STEPS.length - 1 && <span className="h-px flex-1 bg-[#D5D9CD]" />}
           </li>
@@ -206,7 +208,7 @@ export default function Report() {
         {step === 0 && (
           <div className="space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="report-title">Title</Label>
+              <Label htmlFor="report-title">{t("Title")}</Label>
               <Input
                 id="report-title"
                 data-testid="report-title-input"
@@ -218,7 +220,7 @@ export default function Report() {
               {errors.title && <p className="text-xs font-medium text-[#C2410C]" data-testid="report-title-error">{errors.title}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="report-description">What exactly is wrong?</Label>
+              <Label htmlFor="report-description">{t("What exactly is wrong?")}</Label>
               <Textarea
                 id="report-description"
                 data-testid="report-description-input"
@@ -231,7 +233,7 @@ export default function Report() {
               {errors.description && <p className="text-xs font-medium text-[#C2410C]" data-testid="report-description-error">{errors.description}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t("Category")}</Label>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {CATEGORIES.map((c) => {
                   const Icon = CATEGORY_ICONS[c];
@@ -250,7 +252,7 @@ export default function Report() {
                       )}
                     >
                       <Icon className="size-5" style={activeCategory ? { color: CATEGORY_COLORS[c] } : undefined} />
-                      <span className="text-xs font-semibold leading-tight">{CATEGORY_LABELS[c]}</span>
+                      <span className="text-xs font-semibold leading-tight">{t(CATEGORY_LABELS[c])}</span>
                     </button>
                   );
                 })}
@@ -259,7 +261,7 @@ export default function Report() {
             </div>
             <div className="flex justify-end">
               <Button data-testid="report-next-1" onClick={() => { if (validateStep0()) setStep(1); }}>
-                Next: pin the location <ArrowRight className="size-4" />
+                {t("Next: pin the location")} <ArrowRight className="size-4" />
               </Button>
             </div>
           </div>
@@ -271,13 +273,13 @@ export default function Report() {
               <span className="flex items-center gap-1.5 text-[#172B3A]">
                 <MapPin className="size-4 text-[#237A62]" />
                 {selection ? (
-                  <>Routing to <strong>{selection.locality ?? selection.town}</strong>, {selection.district}</>
+                  <>{t("Routing to")} <strong>{selection.locality ?? selection.town}</strong>, {selection.district}</>
                 ) : (
-                  "No locality chosen yet"
+                  t("No locality chosen yet")
                 )}
               </span>
               <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)} data-testid="report-change-locality">
-                {selection ? "Change" : "Choose locality"}
+                {selection ? t("Change") : t("Choose locality")}
               </Button>
             </div>
             {errors.locality && <p className="text-xs font-medium text-[#C2410C]">{errors.locality}</p>}
@@ -292,7 +294,7 @@ export default function Report() {
             />
             {errors.position && <p className="text-xs font-medium text-[#C2410C]">{errors.position}</p>}
             <p className="text-xs text-[#52656F]">
-              Click the map to drop the pin, drag it to fine-tune, or use your current GPS position.
+              {t("Click the map to drop the pin, drag it to fine-tune, or use your current GPS position.")}
               {position && (
                 <span className="ml-1 font-semibold text-[#237A62]" data-testid="report-pinned-coords">
                   Pinned: {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
@@ -302,12 +304,12 @@ export default function Report() {
 
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={detectGps} data-testid="report-gps-button">
-                <LocateFixed className="size-4" /> Use my current location
+                <LocateFixed className="size-4" /> {t("Use my current location")}
               </Button>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="location-search">Search a place to jump the map there</Label>
+              <Label htmlFor="location-search">{t("Search a place to jump the map there")}</Label>
               <Input
                 id="location-search"
                 data-testid="report-location-search"
@@ -336,7 +338,7 @@ export default function Report() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="report-address">Nearest landmark (optional)</Label>
+              <Label htmlFor="report-address">{t("Nearest landmark (optional)")}</Label>
               <Input
                 id="report-address"
                 data-testid="report-address-input"
@@ -354,10 +356,10 @@ export default function Report() {
             )}
             <div className="flex justify-between pt-1">
               <Button variant="outline" onClick={() => setStep(0)} data-testid="report-back-1">
-                <ArrowLeft className="size-4" /> Back
+                <ArrowLeft className="size-4" /> {t("Back")}
               </Button>
               <Button data-testid="report-next-2" onClick={() => { if (validateStep1()) setStep(2); }}>
-                Next: add photos <ArrowRight className="size-4" />
+                {t("Next: add photos")} <ArrowRight className="size-4" />
               </Button>
             </div>
           </div>
@@ -366,7 +368,7 @@ export default function Report() {
         {step === 2 && (
           <div className="space-y-5">
             <div className="space-y-2">
-              <Label>Photos (up to {MAX_PHOTOS}, optional but powerful)</Label>
+              <Label>{t("Photos (up to 3, optional but powerful)")}</Label>
               <div className="grid grid-cols-3 gap-2">
                 {photos.map((photo, index) => (
                   <div key={index} className="relative" data-testid={`report-photo-preview-${index}`}>
@@ -388,7 +390,7 @@ export default function Report() {
                     data-testid="report-photo-input-label"
                   >
                     <Camera className="size-5" />
-                    Add photo
+                    {t("Add photo")}
                     <input
                       type="file"
                       accept="image/*"
@@ -407,9 +409,9 @@ export default function Report() {
             </div>
 
             <div className="rounded-lg bg-[#EAECE4] p-4 text-sm" data-testid="report-review">
-              <div className="font-heading text-sm font-bold text-[#172B3A]">Review</div>
+              <div className="font-heading text-sm font-bold text-[#172B3A]">{t("Review")}</div>
               <ul className="mt-2 space-y-1 text-[#52656F]">
-                <li><strong className="text-[#172B3A]">{title.trim() || "Untitled"}</strong> — {category ? CATEGORY_LABELS[category] : "no category"}</li>
+                <li><strong className="text-[#172B3A]">{title.trim() || "Untitled"}</strong> — {category ? t(CATEGORY_LABELS[category]) : "no category"}</li>
                 <li>{position ? `Pinned at ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}` : "No location pinned"}</li>
                 <li>
                   Routing to {selection ? `${selection.locality ?? selection.town}, ${selection.district}` : "no locality"} ·{" "}
@@ -420,10 +422,10 @@ export default function Report() {
 
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep(1)} data-testid="report-back-2">
-                <ArrowLeft className="size-4" /> Back
+                <ArrowLeft className="size-4" /> {t("Back")}
               </Button>
               <Button onClick={submit} disabled={submitting} data-testid="report-submit">
-                {submitting ? "Submitting…" : "Submit complaint"}
+                {submitting ? t("Submitting…") : t("Submit complaint")}
               </Button>
             </div>
           </div>

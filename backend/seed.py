@@ -1,7 +1,7 @@
-"""Seed CivicConnect with demo accounts and realistic Bengaluru complaints.
+"""Add realistic, repeatable demo data to CivicConnect without replacing records.
 
-Run:  cd /app/backend && python seed.py          (no-op if data already exists)
-      cd /app/backend && python seed.py --drop    (wipe + reseed)
+Run from this directory with the backend environment configured: ``python seed.py``.
+Demo rows carry ``demo_seed_id`` so they can be identified separately.
 """
 
 import asyncio
@@ -11,8 +11,9 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import requests
+from pymongo.errors import DuplicateKeyError
 
-from lib.db import db, ensure_indexes
+from lib.db import client, db, ensure_indexes
 from lib.security import hash_password
 
 PHOTO_SOURCES = {
@@ -21,12 +22,19 @@ PHOTO_SOURCES = {
     "street": "https://images.unsplash.com/photo-1636011203281-a76ae5a437dd?w=1080&fm=jpg&q=70&fit=max",
 }
 MAX_PHOTO_BYTES = 700_000
+DEMO_SEED_ID = "civicconnect-hackathon-demo-v1"
+DEMO_NAMESPACE = uuid.UUID("46e9ea36-b605-4d91-a355-54da215b7415")
+
+
+def stable_id(value: str) -> str:
+    """Make seed IDs stable so rerunning this script never duplicates demo rows."""
+    return str(uuid.uuid5(DEMO_NAMESPACE, value))
 
 
 def fetch_photo(key: str) -> str | None:
     """Download a demo photo as a size-capped data URL; give up quietly if offline."""
     try:
-        resp = requests.get(PHOTO_SOURCES[key], timeout=20)
+        resp = requests.get(PHOTO_SOURCES[key], timeout=10)
         if resp.status_code != 200 or len(resp.content) > MAX_PHOTO_BYTES:
             return None
         return "data:image/jpeg;base64," + base64.b64encode(resp.content).decode()
@@ -155,41 +163,62 @@ VOTES = [0, 1, 2, 3, 5, 6, 7, 8, 10, 11, 12]  # complaint indexes the seeded cit
 
 
 async def seed() -> None:
-    existing = await db.users.count_documents({})
-    if existing and "--drop" not in sys.argv:
-        print(f"Database already has {existing} users — nothing to do. Run with --drop to reseed.")
-        return
-
-    if "--drop" in sys.argv:
-        for collection in ("users", "complaints", "votes", "status_history"):
-            await db[collection].drop()
-        print("Dropped collections.")
-
     now = datetime.now(timezone.utc)
     photos = {key: fetch_photo(key) for key in PHOTO_SOURCES}
     attached = sum(1 for p in photos.values() if p)
     print(f"Downloaded {attached}/{len(photos)} demo photos.")
 
     users: dict[str, dict] = {}
+    inserted_users = 0
     for spec in [ADMIN, CITIZEN, *EXTRA_CITIZENS]:
-        doc = {
-            "id": str(uuid.uuid4()),
-            **spec,
-            "email": spec["email"],
-            "password_hash": hash_password(spec["password"]),
-            "created_at": now - timedelta(days=90),
-        }
-        await db.users.insert_one(doc)
+        # Reuse an existing account if present; never reset its password or role.
+        doc = await db.users.find_one({"email": spec["email"]})
+        if doc is None:
+            doc = {
+                "id": stable_id(f"user:{spec['email']}"),
+                "name": spec["name"],
+                "email": spec["email"],
+                "role": spec["role"],
+                "password_hash": hash_password(spec["password"]),
+                "created_at": now - timedelta(days=90),
+                "demo_seed_id": DEMO_SEED_ID,
+            }
+            try:
+                await db.users.insert_one(doc)
+                inserted_users += 1
+            except DuplicateKeyError:
+                # A concurrently-created email may have won the unique-index race.
+                doc = await db.users.find_one({"email": spec["email"]})
+                if doc is None:
+                    raise
         users[spec["email"]] = doc
-    print(f"Seeded {len(users)} users (admin@civicconnect.app / Admin@1234, citizen@civicconnect.app / Citizen@1234).")
+    print(f"Added {inserted_users} demo users; existing accounts were left unchanged.")
 
+    inserted_complaints = 0
     for index, (locality, lat, lng, address, category, title, description, status, hours_ago) in enumerate(COMPLAINTS):
         created = now - timedelta(hours=hours_ago)
-        complaint_id = str(uuid.uuid4())
+        complaint_id = stable_id(f"complaint:{index}")
         photo = photos.get("pothole" if category == "roads_potholes" else
                            "garbage" if category == "garbage_sanitation" else
                            "street" if index % 3 == 0 else None)
-        await db.complaints.insert_one({
+        history = HISTORY_PATHS[status]
+        elapsed = now - created
+        step = elapsed / max(len(history), 1)
+        events = [
+            {
+                "id": stable_id(f"history:{complaint_id}:{event_index}"),
+                "complaint_id": complaint_id,
+                "status": event_status,
+                "remark": remark,
+                "actor_name": ADMIN["name"],
+                "created_at": created + step * (event_index + 1),
+                "demo_seed_id": DEMO_SEED_ID,
+            }
+            for event_index, (event_status, remark) in enumerate(history)
+        ]
+        last_updated = events[-1]["created_at"]
+        photo_list = [photo] if photo else []
+        complaint = {
             "id": complaint_id,
             "title": title,
             "description": description,
@@ -203,44 +232,76 @@ async def seed() -> None:
             "lat": lat,
             "lng": lng,
             "location": {"type": "Point", "coordinates": [lng, lat]},
-            "photos": [photo] if photo else [],
+            "photos": photo_list,
             "reporter_id": users[CITIZEN["email"]]["id"],
             "reporter_name": CITIZEN["name"],
             "upvote_count": 0,
             "created_at": created,
-            "updated_at": created,
-        })
-        cursor_time = created
-        for event_status, remark in HISTORY_PATHS[status]:
-            cursor_time += timedelta(hours=6)
-            await db.status_history.insert_one({
-                "id": str(uuid.uuid4()),
-                "complaint_id": complaint_id,
-                "status": event_status,
-                "remark": remark,
-                "actor_name": ADMIN["name"],
-                "created_at": cursor_time,
+            "updated_at": last_updated,
+            "demo_seed_id": DEMO_SEED_ID,
+        }
+        if status == "resolved":
+            complaint.update({
+                "resolution_photo": photo,
+                "resolution_remark": "Completed repairs verified by the demo ward officer.",
+                "resolved_at": last_updated,
             })
+        result = await db.complaints.update_one(
+            {"id": complaint_id}, {"$setOnInsert": complaint}, upsert=True
+        )
+        if result.upserted_id is not None:
+            inserted_complaints += 1
+        for event in events:
+            await db.status_history.update_one(
+                {"id": event["id"]}, {"$setOnInsert": event}, upsert=True
+            )
         if index in VOTES:
             voters = [users[CITIZEN["email"]], *list(users.values())[2:]]
-            for voter in voters[: (index % 4) + 1]:
-                await db.votes.insert_one({
-                    "id": str(uuid.uuid4()),
-                    "complaint_id": complaint_id,
-                    "user_id": voter["id"],
-                    "created_at": created + timedelta(hours=1),
-                })
-    # recount upvotes from actual vote rows so counts stay honest
-    await db.complaints.update_many({}, {"$set": {"upvote_count": 0}})
-    async for row in db.votes.aggregate([{"$group": {"_id": "$complaint_id", "n": {"$sum": 1}}}]):
-        await db.complaints.update_one({"id": row["_id"]}, {"$set": {"upvote_count": row["n"]}})
+            for voter_index, voter in enumerate(voters[: (index % 4) + 1]):
+                await db.votes.update_one(
+                    {"complaint_id": complaint_id, "user_id": voter["id"]},
+                    {"$setOnInsert": {
+                        "id": stable_id(f"vote:{complaint_id}:{voter['id']}"),
+                        "complaint_id": complaint_id,
+                        "user_id": voter["id"],
+                        "created_at": created + timedelta(minutes=30 + voter_index),
+                        "demo_seed_id": DEMO_SEED_ID,
+                    }},
+                    upsert=True,
+                )
+        vote_count = await db.votes.count_documents({"complaint_id": complaint_id})
+        await db.complaints.update_one(
+            {"id": complaint_id, "demo_seed_id": DEMO_SEED_ID},
+            {"$set": {"upvote_count": vote_count}},
+        )
 
-    print(f"Seeded {len(COMPLAINTS)} complaints with status history and votes.")
+    print(
+        f"Added {inserted_complaints} demo complaints (up to {len(COMPLAINTS)} total), "
+        "with status history and votes. Existing complaint data was preserved."
+    )
 
 
 async def main() -> None:
-    await ensure_indexes()
-    await seed()
+    try:
+        await client.admin.command("ping")
+    except Exception as exc:
+        print(
+            f"MongoDB is unavailable ({type(exc).__name__}); no demo data was written. "
+            "Check DNS/network access and backend/.env, then rerun this script."
+        )
+        return
+    try:
+        await ensure_indexes()
+        await seed()
+    except Exception as exc:
+        print(
+            f"Demo seeding stopped ({type(exc).__name__}). "
+            "Any inserted rows are safe to keep; rerun after fixing the issue."
+        )
+    finally:
+        client.close()
 
 if __name__ == "__main__":
+    if "--drop" in sys.argv:
+        raise SystemExit("--drop is disabled; demo seeding never deletes collections.")
     asyncio.run(main())

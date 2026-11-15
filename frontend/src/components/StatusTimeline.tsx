@@ -3,6 +3,7 @@
 import { Check, Circle, X } from "lucide-react";
 import { STATUS_LABELS } from "@/lib/civic";
 import { formatDateTime } from "@/lib/media";
+import { useLanguage } from "@/lib/language-context";
 import type { Status, StatusEvent } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -16,8 +17,9 @@ const DOT_COLOR: Record<Status, string> = {
 };
 
 export default function StatusTimeline({ history }: { history: StatusEvent[] }) {
+  const { t } = useLanguage();
   if (history.length === 0) {
-    return <p className="text-sm text-[#52656F]">No status updates have been recorded yet.</p>;
+    return <p className="text-sm text-[#52656F]">{t("No status updates have been recorded yet.")}</p>;
   }
   const byStatus = new Map<Status, StatusEvent>();
   for (const event of history) byStatus.set(event.status, event); // ascending order → latest wins
@@ -55,7 +57,7 @@ export default function StatusTimeline({ history }: { history: StatusEvent[] }) 
             </span>
             <div className="min-w-0">
               <div className={cn("text-sm font-semibold", done ? "text-[#172B3A]" : "text-[#9AA7AE]")}>
-                {STATUS_LABELS[status]}
+                {t(STATUS_LABELS[status])}
                 {event && (
                   <span className="ml-2 font-normal text-xs text-[#52656F]">
                     {formatDateTime(event.created_at)}
@@ -65,7 +67,7 @@ export default function StatusTimeline({ history }: { history: StatusEvent[] }) 
               {event && (
                 <>
                   <p className="mt-1 text-sm leading-relaxed text-[#52656F]">{event.remark}</p>
-                  <p className="mt-1 text-xs text-[#9AA7AE]">— {event.actor_name}, municipal desk</p>
+                  <p className="mt-1 text-xs text-[#9AA7AE]">— {event.actor_name}, {t("municipal desk")}</p>
                 </>
               )}
             </div>

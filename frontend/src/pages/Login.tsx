@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError, apiPost } from "@/lib/api";
 import { beginSession } from "@/lib/session";
+import { useLanguage } from "@/lib/language-context";
 import { useMe } from "@/lib/useAuth";
 import type { User } from "@/lib/types";
 
@@ -18,6 +19,7 @@ const DEMO_ACCOUNTS = [
 ];
 
 export default function Login() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get("next") ?? "";
@@ -30,7 +32,7 @@ export default function Login() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!email.trim() || !password) {
-      setError("Enter your email and password");
+      setError(t("Enter your email and password"));
       return;
     }
     setBusy(true);
@@ -43,8 +45,8 @@ export default function Login() {
     } catch (err) {
       setError(
         err instanceof ApiError && err.status === 401
-          ? "Invalid email or password"
-          : "Sign in failed — check your connection and try again",
+          ? t("Invalid email or password")
+          : t("Sign in failed — check your connection and try again"),
       );
     } finally {
       setBusy(false);
@@ -63,17 +65,16 @@ export default function Login() {
             <span className="font-heading text-lg font-bold text-white">CivicConnect</span>
           </Link>
           <h2 className="mt-14 font-heading text-3xl font-bold leading-snug text-white">
-            Welcome back to the record.
+            {t("Welcome back to the record.")}
           </h2>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-[#9FB2BA]">
-            Sign in to report new issues, support your neighbours' complaints and follow the
-            official timeline on everything you have reported.
+            {t("Sign in to report new issues, support your neighbours' complaints and follow the official timeline on everything you have reported.")}
           </p>
         </div>
         <ul className="space-y-3 text-sm text-[#CBD5E1]">
           {["Track every complaint you filed", "Support issues in your locality", "See admin remarks the moment they land"].map((item) => (
             <li key={item} className="flex items-center gap-2">
-              <CheckCircle2 className="size-4 text-[#E6A34A]" /> {item}
+              <CheckCircle2 className="size-4 text-[#E6A34A]" /> {t(item)}
             </li>
           ))}
         </ul>
@@ -83,16 +84,16 @@ export default function Login() {
       <div className="flex items-center">
         <Card className="w-full">
           <CardContent className="p-6 sm:p-8">
-            <h1 className="font-heading text-xl font-bold text-[#172B3A]">Sign in</h1>
-            <p className="mt-1 text-sm text-[#52656F]">Use your CivicConnect account.</p>
+            <h1 className="font-heading text-xl font-bold text-[#172B3A]">{t("Sign in")}</h1>
+            <p className="mt-1 text-sm text-[#52656F]">{t("Use your CivicConnect account.")}</p>
             {user && (
               <p className="mt-3 rounded-lg bg-[#EAEFEA] px-3 py-2 text-xs text-[#237A62]">
-                You are already signed in as {user.name} — proceeding will switch accounts.
+                {t("You are already signed in as")} {user.name} — {t("proceeding will switch accounts.")}
               </p>
             )}
             <form onSubmit={submit} className="mt-6 space-y-4" data-testid="login-form">
               <div className="space-y-1.5">
-                <Label htmlFor="login-email">Email</Label>
+                <Label htmlFor="login-email">{t("Email")}</Label>
                 <Input
                   id="login-email"
                   type="email"
@@ -104,12 +105,12 @@ export default function Login() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="login-password">Password</Label>
+                <Label htmlFor="login-password">{t("Password")}</Label>
                 <Input
                   id="login-password"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="Your password"
+                  placeholder={t("Your password")}
                   data-testid="login-password-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -121,13 +122,13 @@ export default function Login() {
                 </p>
               )}
               <Button type="submit" className="w-full" disabled={busy} data-testid="login-submit">
-                <LogIn className="size-4" /> {busy ? "Signing in…" : "Sign in"}
+                <LogIn className="size-4" /> {busy ? t("Signing in…") : t("Sign in")}
               </Button>
             </form>
 
             <div className="mt-6 rounded-lg border border-[#E2E4DC] bg-[#EAECE4] p-4">
               <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#52656F]">
-                <Lock className="size-3.5" /> Demo accounts
+                <Lock className="size-3.5" /> {t("Demo accounts")}
               </p>
               <div className="mt-2 space-y-2">
                 {DEMO_ACCOUNTS.map((account) => (
@@ -145,7 +146,7 @@ export default function Login() {
                         setPassword(account.password);
                       }}
                     >
-                      Fill
+                      {t("Fill")}
                     </Button>
                   </div>
                 ))}
@@ -153,9 +154,9 @@ export default function Login() {
             </div>
 
             <p className="mt-6 text-center text-sm text-[#52656F]">
-              New here?{" "}
+              {t("New here?")}{" "}
               <Link to={next ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="font-semibold text-[#237A62] hover:underline" data-testid="login-to-register">
-                Create an account
+                {t("Create an account")}
               </Link>
             </p>
           </CardContent>

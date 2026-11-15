@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiGet } from "@/lib/api";
 import { LOCALITY_TREE } from "@/lib/localities";
+import { useLanguage } from "@/lib/language-context";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useLocality, type LocalitySelection } from "@/lib/locality-context";
 import type { GeocodeResult } from "@/lib/types";
@@ -48,10 +49,11 @@ export function LocalityPickerDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { selection, setSelection } = useLocality();
+  const { t } = useLanguage();
   const [draft, setDraft] = useState<Draft | null>(selection ? { ...selection } : null);
   const [query, setQuery] = useState("");
   const [gpsBusy, setGpsBusy] = useState(false);
-  const debouncedQuery = useDebouncedValue(query, 600);
+  const debouncedQuery = useDebouncedValue(query, 350);
 
   useEffect(() => {
     if (open) {
@@ -83,7 +85,7 @@ export function LocalityPickerDialog({
 
   function detectLocation() {
     if (!("geolocation" in navigator)) {
-      toast.error("Your browser does not support location detection");
+      toast.error(t("Your browser does not support location detection"));
       return;
     }
     setGpsBusy(true);
@@ -100,14 +102,14 @@ export function LocalityPickerDialog({
           setDraft({ ...base, lat: latitude, lng: longitude });
           toast.success("Detected your location — pick the matching locality if the name looks off");
         } catch {
-          toast.error("Could not look up your location — choose it from the lists below");
+          toast.error(t("Could not look up your location — choose it from the lists below"));
         } finally {
           setGpsBusy(false);
         }
       },
       () => {
         setGpsBusy(false);
-        toast.error("Location permission denied — choose your locality from the lists");
+        toast.error(t("Location permission denied — choose your locality from the lists"));
       },
       { timeout: 10_000 },
     );
@@ -115,7 +117,7 @@ export function LocalityPickerDialog({
 
   function apply() {
     if (!draft || !draft.state || !draft.district || !draft.town) {
-      toast.error("Pick a state, district and town first");
+      toast.error(t("Pick a state, district and town first"));
       return;
     }
     const { lat, lng, ...selection } = draft;
@@ -128,15 +130,15 @@ export function LocalityPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg" data-testid="locality-dialog">
         <DialogHeader>
-          <DialogTitle className="font-heading">Choose your locality</DialogTitle>
+          <DialogTitle className="font-heading">{t("Choose your locality")}</DialogTitle>
           <DialogDescription>
-            Complaints are grouped by locality. Search a place, detect your location, or pick from the lists.
+            {t("Complaints are grouped by locality. Search a place, detect your location, or pick from the lists.")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="locality-search">Search any Indian town or neighbourhood</Label>
+            <Label htmlFor="locality-search">{t("Search any Indian town or neighbourhood")}</Label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#52656F]" />
               <Input
@@ -151,10 +153,10 @@ export function LocalityPickerDialog({
             {debouncedQuery.trim().length >= 3 && (
               <div className="max-h-44 overflow-y-auto rounded-lg border border-[#E2E4DC] bg-white">
                 {search.isFetching && (
-                  <div className="px-3 py-2.5 text-sm text-[#52656F]">Searching places…</div>
+                  <div className="px-3 py-2.5 text-sm text-[#52656F]">{t("Searching places…")}</div>
                 )}
                 {!search.isFetching && (search.data?.results.length ?? 0) === 0 && (
-                  <div className="px-3 py-2.5 text-sm text-[#52656F]">No matching places found</div>
+                  <div className="px-3 py-2.5 text-sm text-[#52656F]">{t("No matching places found")}</div>
                 )}
                 {search.data?.results.map((result) => (
                   <button
@@ -173,35 +175,37 @@ export function LocalityPickerDialog({
               </div>
             )}
             {debouncedQuery.trim().length > 0 && debouncedQuery.trim().length < 3 && (
-              <p className="text-xs text-[#52656F]">Type at least 3 characters to search</p>
+              <p className="text-xs text-[#52656F]">{t("Type at least 3 characters to search")}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>State</Label>
+              <Label>{t("State")}</Label>
               <Select
                 value={draft?.state ?? ""}
                 onValueChange={(value: string) =>
                   setDraft({ state: value, district: "", town: "" })
                 }
               >
-                <SelectTrigger data-testid="locality-state-select"><SelectValue placeholder="Select state" /></SelectTrigger>
+                <SelectTrigger data-testid="locality-state-select"><SelectValue placeholder={t("Select state")} /></SelectTrigger>
                 <SelectContent>
                   {stateNames.map((name) => (
-                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                    <SelectItem key={name} value={name}>
+                      {name === "Tamil Nadu" ? t("Tamil Nadu (Chennai)") : name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>District</Label>
+              <Label>{t("District")}</Label>
               <Select
                 value={draft?.district || ""}
                 onValueChange={(value: string) => setDraft((d) => ({ state: d?.state ?? "", district: value, town: "" }))}
                 disabled={!draft?.state}
               >
-                <SelectTrigger data-testid="locality-district-select"><SelectValue placeholder="Select district" /></SelectTrigger>
+                <SelectTrigger data-testid="locality-district-select"><SelectValue placeholder={t("Select district")} /></SelectTrigger>
                 <SelectContent>
                   {districts.map((d) => (
                     <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>
@@ -210,13 +214,13 @@ export function LocalityPickerDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Town / City</Label>
+              <Label>{t("Town / City")}</Label>
               <Select
                 value={draft?.town || ""}
                 onValueChange={(value: string) => setDraft((d) => ({ state: d?.state ?? "", district: d?.district ?? "", town: value }))}
                 disabled={!draft?.district}
               >
-                <SelectTrigger data-testid="locality-town-select"><SelectValue placeholder="Select town" /></SelectTrigger>
+                <SelectTrigger data-testid="locality-town-select"><SelectValue placeholder={t("Select town")} /></SelectTrigger>
                 <SelectContent>
                   {towns.map((t) => (
                     <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
@@ -225,7 +229,7 @@ export function LocalityPickerDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Locality (optional)</Label>
+              <Label>{t("Locality (optional)")}</Label>
               <Select
                 value={draft?.locality || WHOLE_TOWN}
                 onValueChange={(value: string) =>
@@ -239,12 +243,12 @@ export function LocalityPickerDialog({
                 disabled={!draft?.town || localities.length === 0}
               >
                 <SelectTrigger data-testid="locality-area-select">
-                  <SelectValue placeholder={draft?.town ? "Whole town" : "Select town first"}>
-                    {(v) => (!v || v === WHOLE_TOWN ? "Whole town" : (v as string))}
+                  <SelectValue placeholder={draft?.town ? t("Whole town") : t("Select town first")}>
+                    {(v) => (!v || v === WHOLE_TOWN ? t("Whole town") : (v as string))}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={WHOLE_TOWN}>Whole town</SelectItem>
+                  <SelectItem value={WHOLE_TOWN}>{t("Whole town")}</SelectItem>
                   {localities.map((l) => (
                     <SelectItem key={l} value={l}>{l}</SelectItem>
                   ))}
@@ -262,15 +266,15 @@ export function LocalityPickerDialog({
               disabled={gpsBusy}
             >
               <LocateFixed className="size-4" />
-              {gpsBusy ? "Detecting…" : "Use my current location"}
+              {gpsBusy ? t("Detecting…") : t("Use my current location")}
             </Button>
             <Button data-testid="apply-locality-button" onClick={apply} disabled={!draft?.town}>
-              Use this locality
+              {t("Use this locality")}
             </Button>
           </div>
           {draft?.lat !== undefined && draft?.lng !== undefined && (
             <p className="text-xs text-[#52656F]">
-              Map coordinates captured: {draft.lat.toFixed(5)}, {draft.lng.toFixed(5)}
+              {t("Map coordinates captured:")} {draft.lat.toFixed(5)}, {draft.lng.toFixed(5)}
             </p>
           )}
         </div>

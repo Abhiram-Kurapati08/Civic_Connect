@@ -4,6 +4,7 @@ import { ArrowBigUp, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CategoryChip, StatusBadge } from "@/components/StatusBadge";
 import { formatRelativeTime } from "@/lib/media";
+import { useLanguage } from "@/lib/language-context";
 import type { Complaint } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ export default function ComplaintCard({
   complaint: Complaint;
   active?: boolean;
 }) {
+  const { t } = useLanguage();
   return (
     <Card
       size="sm"
@@ -32,7 +34,7 @@ export default function ComplaintCard({
           />
         ) : (
           <div className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-[#EAECE4] text-xs font-medium text-[#52656F]">
-            No photo
+            {t("No photo")}
           </div>
         )}
         <div className="min-w-0 flex-1">
@@ -55,7 +57,7 @@ export default function ComplaintCard({
           </p>
           <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-[#52656F]">
             <ArrowBigUp className="size-3.5" /> {complaint.upvote_count}{" "}
-            {complaint.upvote_count === 1 ? "support" : "supports"}
+            {t(complaint.upvote_count === 1 ? "support" : "supports")}
           </p>
         </div>
       </CardContent>

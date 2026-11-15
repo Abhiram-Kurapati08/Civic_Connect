@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { apiPost, ApiError } from "@/lib/api";
 import { useMe } from "@/lib/useAuth";
+import { useLanguage } from "@/lib/language-context";
 import { cn } from "@/lib/utils";
 
 interface UpvoteButtonProps {
@@ -25,6 +26,7 @@ export default function UpvoteButton({
   testId = "upvote-button",
 }: UpvoteButtonProps) {
   const { data: user } = useMe();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -32,28 +34,28 @@ export default function UpvoteButton({
     mutationFn: () =>
       apiPost<{ upvote_count: number; viewer_has_voted: boolean }>(`/complaints/${complaintId}/upvote`),
     onSuccess: () => {
-      toast.success("Thanks for adding your support — the ward office weighs supported complaints first.");
+      toast.success(t("Thanks for adding your support — the ward office weighs supported complaints first."));
       void queryClient.invalidateQueries({ queryKey: ["complaints"] });
       void queryClient.invalidateQueries({ queryKey: ["complaint", complaintId] });
       void queryClient.invalidateQueries({ queryKey: ["myComplaints"] });
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 401) {
-        toast.error("Sign in to support complaints", {
-          action: { label: "Sign in", onClick: () => navigate("/login") },
+        toast.error(t("Sign in to support complaints"), {
+          action: { label: t("Sign in"), onClick: () => navigate("/login") },
         });
       } else if (error instanceof ApiError && error.status === 409) {
-        toast.error("You have already supported this complaint");
+        toast.error(t("You have already supported this complaint"));
       } else {
-        toast.error("Could not register your support — please try again");
+        toast.error(t("Could not register your support — please try again"));
       }
     },
   });
 
   function handleClick() {
     if (!user) {
-      toast.error("Sign in to support complaints", {
-        action: { label: "Sign in", onClick: () => navigate("/login") },
+      toast.error(t("Sign in to support complaints"), {
+        action: { label: t("Sign in"), onClick: () => navigate("/login") },
       });
       return;
     }
@@ -73,11 +75,11 @@ export default function UpvoteButton({
         voted && "border-[#237A62] bg-[#EAEFEA] text-[#237A62] hover:bg-[#EAEFEA]",
         size === "sm" && "h-7 px-2.5 text-xs",
       )}
-      title={voted ? "You supported this complaint" : "Support this complaint"}
+      title={t(voted ? "You supported this complaint" : "Support this complaint")}
     >
       <ArrowBigUp className={cn("size-4", size === "sm" && "size-3.5")} />
       <span data-testid={`${testId}-count`}>{upvoteCount}</span>
-      <span className="sr-only">supports</span>
+      <span className="sr-only">{t("supports")}</span>
     </Button>
   );
 }

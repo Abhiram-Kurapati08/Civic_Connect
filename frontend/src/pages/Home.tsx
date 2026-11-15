@@ -20,6 +20,7 @@ import MapView, { type MapMarker } from "@/components/map/MapView";
 import { CATEGORIES, CATEGORY_ICONS, CATEGORY_LABELS } from "@/lib/civic";
 import { apiGet } from "@/lib/api";
 import { useLocality } from "@/lib/locality-context";
+import { useLanguage } from "@/lib/language-context";
 import type { Complaint, ComplaintPage } from "@/lib/types";
 
 function toMarkers(items: Complaint[]): MapMarker[] {
@@ -36,6 +37,7 @@ function toMarkers(items: Complaint[]): MapMarker[] {
 
 export default function Home() {
   const { selection, center } = useLocality();
+  const { t } = useLanguage();
 
   function pageParams(extra: string): string {
     const p = new URLSearchParams(extra);
@@ -65,11 +67,11 @@ export default function Home() {
     queryFn: () => apiGet<ComplaintPage>(pageParams("limit=3&sort=top")),
   });
 
-  const scope = selection?.locality ?? selection?.town ?? "every listed locality";
+  const scope = selection?.locality ?? selection?.town ?? t("every listed locality");
   const stats = [
-    { label: "Reports tracked", value: total.data?.total, testid: "home-stat-total" },
-    { label: "Work in progress", value: active.data?.total, testid: "home-stat-active" },
-    { label: "Resolved so far", value: resolved.data?.total, testid: "home-stat-resolved" },
+    { label: t("Reports tracked"), value: total.data?.total, testid: "home-stat-total" },
+    { label: t("Work in progress"), value: active.data?.total, testid: "home-stat-active" },
+    { label: t("Resolved so far"), value: resolved.data?.total, testid: "home-stat-resolved" },
   ];
 
   return (
@@ -79,22 +81,20 @@ export default function Home() {
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-16">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[#237A62]">
-              Community-powered civic reporting
+              {t("Community-powered civic reporting")}
             </p>
             <h1 className="mt-3 font-heading text-4xl font-bold leading-tight tracking-tight text-[#172B3A] sm:text-5xl">
-              Your neighbourhood's problems,<br />on the record.
+              {t("Your neighbourhood's problems,")}<br />{t("on the record.")}
             </h1>
             <p className="mt-4 max-w-lg text-base leading-relaxed text-[#52656F]">
-              Report potholes, broken streetlights, overflowing garbage and more — pin it on the
-              map, back reports from your neighbours, and follow every issue until the ward office
-              closes it.
+              {t("Report potholes, broken streetlights, overflowing garbage and more — pin it on the map, back reports from your neighbours, and follow every issue until the ward office closes it.")}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button size="lg" render={<Link to="/report" />} data-testid="hero-report-cta">
-                <Megaphone className="size-4" /> Report an issue
+                <Megaphone className="size-4" /> {t("Report an issue")}
               </Button>
               <Button size="lg" variant="outline" render={<Link to="/explore" />} data-testid="hero-explore-cta">
-                <Map className="size-4" /> Explore the map
+                <Map className="size-4" /> {t("Explore the map")}
               </Button>
             </div>
             <div className="mt-8 grid max-w-md grid-cols-3 gap-4">
@@ -109,7 +109,7 @@ export default function Home() {
             </div>
             <p className="mt-6 flex items-center gap-1.5 text-sm text-[#52656F]">
               <MapPin className="size-4 text-[#237A62]" />
-              Currently showing: <span className="font-semibold text-[#172B3A]">{scope}</span>
+              {t("Currently showing:")} <span className="font-semibold text-[#172B3A]">{scope}</span>
             </p>
           </div>
           <div className="relative">
@@ -121,7 +121,7 @@ export default function Home() {
               className="h-[340px] w-full rounded-xl border border-[#E2E4DC] shadow-sm sm:h-[420px]"
             />
             <div className="absolute -bottom-4 left-4 rounded-lg border border-[#E2E4DC] bg-white px-4 py-2.5 shadow-md">
-              <p className="text-xs font-medium text-[#52656F]">Live reports on the map</p>
+              <p className="text-xs font-medium text-[#52656F]">{t("Live reports on the map")}</p>
               <p className="font-heading text-sm font-bold text-[#172B3A]">
                 {feed.data ? `${feed.data.items.length} pins in ${scope}` : "Loading live data…"}
               </p>
@@ -134,8 +134,8 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between">
           <div>
-            <h2 className="font-heading text-2xl font-bold text-[#172B3A]">What can you report?</h2>
-            <p className="mt-1 text-sm text-[#52656F]">Eight categories, one accountable trail for each.</p>
+            <h2 className="font-heading text-2xl font-bold text-[#172B3A]">{t("What can you report?")}</h2>
+            <p className="mt-1 text-sm text-[#52656F]">{t("Eight categories, one accountable trail for each.")}</p>
           </div>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -151,7 +151,7 @@ export default function Home() {
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#EAECE4] text-[#172B3A] group-hover:bg-[#237A62] group-hover:text-white">
                   <Icon className="size-4.5" />
                 </span>
-                <span className="text-sm font-semibold text-[#172B3A]">{CATEGORY_LABELS[category]}</span>
+                <span className="text-sm font-semibold text-[#172B3A]">{t(CATEGORY_LABELS[category])}</span>
               </Link>
             );
           })}
@@ -161,9 +161,9 @@ export default function Home() {
       {/* How it works */}
       <section className="bg-[#172B3A]">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <h2 className="font-heading text-2xl font-bold text-white">From complaint to closure</h2>
+          <h2 className="font-heading text-2xl font-bold text-white">{t("From complaint to closure")}</h2>
           <p className="mt-1 text-sm text-[#9FB2BA]">
-            Every report follows one accountable trail — visible to you at every step.
+            {t("Every report follows one accountable trail — visible to you at every step.")}
           </p>
           <div className="mt-8 grid gap-8 md:grid-cols-3">
             {[
@@ -190,9 +190,9 @@ export default function Home() {
                 <div>
                   <div className="flex items-center gap-2 font-heading text-base font-bold text-white">
                     <step.icon className="size-4 text-[#E6A34A]" />
-                    {step.title}
+                    {t(step.title)}
                   </div>
-                  <p className="mt-1.5 text-sm leading-relaxed text-[#9FB2BA]">{step.body}</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-[#9FB2BA]">{t(step.body)}</p>
                 </div>
               </div>
             ))}
@@ -204,11 +204,11 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between">
           <div>
-            <h2 className="font-heading text-2xl font-bold text-[#172B3A]">Most-supported right now</h2>
-            <p className="mt-1 text-sm text-[#52656F]">The complaints your neighbours are rallying behind.</p>
+            <h2 className="font-heading text-2xl font-bold text-[#172B3A]">{t("Most-supported right now")}</h2>
+            <p className="mt-1 text-sm text-[#52656F]">{t("The complaints your neighbours are rallying behind.")}</p>
           </div>
           <Button variant="ghost" size="sm" render={<Link to="/explore" />} data-testid="home-view-all">
-            View all <ArrowRight className="size-4" />
+            {t("View all")} <ArrowRight className="size-4" />
           </Button>
         </div>
         <div className="mt-6">
@@ -221,11 +221,11 @@ export default function Home() {
           ) : (feed.data?.items.length ?? 0) === 0 ? (
             <EmptyState
               icon={Search}
-              title="No reports here yet"
+              title={t("No reports here yet")}
               description={`Be the first to put an issue in ${scope} on the record.`}
               action={
                 <Button render={<Link to="/report" />}>
-                  Report the first issue <ChevronRight className="size-4" />
+                  {t("Report the first issue")} <ChevronRight className="size-4" />
                 </Button>
               }
             />

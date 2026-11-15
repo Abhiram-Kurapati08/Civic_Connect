@@ -2,9 +2,11 @@
 // detail pages, the table and the timeline.
 import { CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_LABELS, STATUS_BADGE_CLASS, STATUS_LABELS } from "@/lib/civic";
 import type { Category, Status } from "@/lib/types";
+import { useLanguage } from "@/lib/language-context";
 import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status, className }: { status: Status; className?: string }) {
+  const { t } = useLanguage();
   return (
     <span
       className={cn(
@@ -14,13 +16,14 @@ export function StatusBadge({ status, className }: { status: Status; className?:
       )}
       data-testid={`status-badge-${status}`}
     >
-      {STATUS_LABELS[status]}
+      {t(STATUS_LABELS[status])}
     </span>
   );
 }
 
 export function CategoryChip({ category, className }: { category: Category; className?: string }) {
   const Icon = CATEGORY_ICONS[category];
+  const { t } = useLanguage();
   return (
     <span
       className={cn(
@@ -35,7 +38,7 @@ export function CategoryChip({ category, className }: { category: Category; clas
         aria-hidden
       />
       <Icon className="size-3.5" />
-      {CATEGORY_LABELS[category]}
+      {t(CATEGORY_LABELS[category])}
     </span>
   );
 }

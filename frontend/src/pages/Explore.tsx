@@ -18,6 +18,7 @@ import { CATEGORIES, CATEGORY_LABELS, STATUSES, STATUS_LABELS } from "@/lib/civi
 import { apiGet } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/media";
 import { useLocality } from "@/lib/locality-context";
+import { useLanguage } from "@/lib/language-context";
 import type { Category, Complaint, ComplaintPage, Status } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ function toMarkers(items: Complaint[]): MapMarker[] {
 
 export default function Explore() {
   const { selection, center } = useLocality();
+  const { t } = useLanguage();
   const [view, setView] = useState<"map" | "list">("map");
   const [category, setCategory] = useState<string>(ALL);
   const [status, setStatus] = useState<string>(ALL);
@@ -106,9 +108,9 @@ export default function Explore() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-[#172B3A]">Explore complaints</h1>
+          <h1 className="font-heading text-2xl font-bold text-[#172B3A]">{t("Explore complaints")}</h1>
           <p className="mt-1 text-sm text-[#52656F]">
-            Showing <span data-testid="explore-count">{feed.data ? feed.data.total : "…"}</span> issues in{" "}
+            {t("Showing")} <span data-testid="explore-count">{feed.data ? feed.data.total : "…"}</span> {t("issues in")}{" "}
             <span className="font-semibold text-[#172B3A]">{scope}</span>
           </p>
         </div>
@@ -121,7 +123,7 @@ export default function Explore() {
               view === "map" ? "bg-white text-[#172B3A] shadow-sm" : "text-[#52656F] hover:text-[#172B3A]",
             )}
           >
-            <MapIcon className="size-4" /> Map
+            <MapIcon className="size-4" /> {t("Map")}
           </button>
           <button
             data-testid="view-toggle-list"
@@ -131,7 +133,7 @@ export default function Explore() {
               view === "list" ? "bg-white text-[#172B3A] shadow-sm" : "text-[#52656F] hover:text-[#172B3A]",
             )}
           >
-            <List className="size-4" /> List
+            <List className="size-4" /> {t("List")}
           </button>
         </div>
       </div>
@@ -139,42 +141,42 @@ export default function Explore() {
       {/* Filters */}
       <div className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-[#E2E4DC] bg-white p-4">
         <div className="space-y-1.5">
-          <Label className="text-xs">Category</Label>
+          <Label className="text-xs">{t("Category")}</Label>
           <Select value={category} onValueChange={(value: string) => setCategory(value)}>
             <SelectTrigger data-testid="filter-category" className="w-[180px]">
-              <SelectValue>{(v) => (v === ALL ? "All categories" : CATEGORY_LABELS[v as Category])}</SelectValue>
+              <SelectValue>{(v) => (v === ALL ? t("All categories") : t(CATEGORY_LABELS[v as Category]))}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All categories</SelectItem>
+              <SelectItem value={ALL}>{t("All categories")}</SelectItem>
               {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{CATEGORY_LABELS[c]}</SelectItem>
+                <SelectItem key={c} value={c}>{t(CATEGORY_LABELS[c])}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Status</Label>
+          <Label className="text-xs">{t("Status")}</Label>
           <Select value={status} onValueChange={(value: string) => setStatus(value)}>
             <SelectTrigger data-testid="filter-status" className="w-[160px]">
-              <SelectValue>{(v) => (v === ALL ? "All statuses" : STATUS_LABELS[v as Status])}</SelectValue>
+              <SelectValue>{(v) => (v === ALL ? t("All statuses") : t(STATUS_LABELS[v as Status]))}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All statuses</SelectItem>
+              <SelectItem value={ALL}>{t("All statuses")}</SelectItem>
               {STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                <SelectItem key={s} value={s}>{t(STATUS_LABELS[s])}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Sort</Label>
+          <Label className="text-xs">{t("Sort")}</Label>
           <Select value={sort} onValueChange={(value: string) => setSort(value)}>
             <SelectTrigger data-testid="filter-sort" className="w-[170px]">
-              <SelectValue>{(v) => (v === "top" ? "Most supported" : "Newest first")}</SelectValue>
+              <SelectValue>{(v) => (v === "top" ? t("Most supported") : t("Newest first"))}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="new">Newest first</SelectItem>
-              <SelectItem value="top">Most supported</SelectItem>
+              <SelectItem value="new">{t("Newest first")}</SelectItem>
+              <SelectItem value="top">{t("Most supported")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -186,7 +188,7 @@ export default function Explore() {
             className={cn(nearby && "bg-[#237A62] hover:bg-[#1d6653]")}
           >
             <LocateFixed className="size-4" />
-            {nearby ? "Nearby filter on — clear" : "Near my location"}
+            {nearby ? t("Nearby filter on — clear") : t("Near my location")}
           </Button>
         </div>
       </div>
@@ -206,11 +208,11 @@ export default function Explore() {
         <div className="mt-5">
           <EmptyState
             icon={Search}
-            title="Could not load complaints"
-            description="The feed is temporarily unavailable. Your data is safe — try again in a moment."
+            title={t("Could not load complaints")}
+            description={t("The feed is temporarily unavailable. Your data is safe — try again in a moment.")}
             action={
               <Button variant="outline" onClick={() => void feed.refetch()}>
-                <RotateCcw className="size-4" /> Retry
+                <RotateCcw className="size-4" /> {t("Retry")}
               </Button>
             }
           />
@@ -219,11 +221,11 @@ export default function Explore() {
         <div className="mt-5">
           <EmptyState
             icon={MapIcon}
-            title="No complaints match these filters"
+            title={t("No complaints match these filters")}
             description={`Nothing reported in ${scope} for this combination yet. Widen the filters or set a different locality.`}
             action={
               <Button variant="outline" onClick={resetFilters} data-testid="reset-filters">
-                <RotateCcw className="size-4" /> Reset filters
+                <RotateCcw className="size-4" /> {t("Reset filters")}
               </Button>
             }
           />
@@ -273,7 +275,7 @@ export default function Explore() {
                     testId="selected-upvote-button"
                   />
                   <Button size="sm" render={<Link to={`/complaints/${selected.id}`} />} data-testid="selected-open-details">
-                    Full details
+                    {t("Full details")}
                   </Button>
                 </div>
               </div>

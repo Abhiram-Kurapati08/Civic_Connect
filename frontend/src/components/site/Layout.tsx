@@ -27,37 +27,47 @@ import { LocalityPickerDialog } from "@/components/LocalityPicker";
 import { useMe } from "@/lib/useAuth";
 import { endSession } from "@/lib/session";
 import { useLocality } from "@/lib/locality-context";
+import { LANGUAGE_NAMES, useLanguage, type Language } from "@/lib/language-context";
 import { cn } from "@/lib/utils";
 
-function localityLabel(selection: ReturnType<typeof useLocality>["selection"]): string {
-  if (!selection) return "Set your locality";
+function localityLabel(
+  selection: ReturnType<typeof useLocality>["selection"],
+  t: (text: string) => string,
+): string {
+  if (!selection) return t("Set your locality");
   return selection.locality ? `${selection.town} · ${selection.locality}` : selection.town;
 }
 
 function SiteHeader() {
   const { data: user, isLoading } = useMe();
   const { selection } = useLocality();
+  const { language, setLanguage, t } = useLanguage();
   const [localityOpen, setLocalityOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   async function signOut() {
+    if (signingOut) return;
+    setSigningOut(true);
     try {
       await endSession(navigate);
       toast("Signed out. See you soon.");
     } catch {
       toast.error("Could not sign out — check your connection and try again");
+    } finally {
+      setSigningOut(false);
     }
   }
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
   const navItems = [
-    { to: "/explore", label: "Explore", testid: "nav-explore" },
-    { to: "/report", label: "Report an Issue", testid: "nav-report" },
-    ...(user ? [{ to: "/dashboard", label: "My Complaints", testid: "nav-dashboard" }] : []),
-    ...(user?.role === "admin" ? [{ to: "/admin", label: "Admin", testid: "nav-admin" }] : []),
+    { to: "/explore", label: t("Explore"), testid: "nav-explore" },
+    { to: "/report", label: t("Report an Issue"), testid: "nav-report" },
+    ...(user ? [{ to: "/dashboard", label: t("My Complaints"), testid: "nav-dashboard" }] : []),
+    ...(user?.role === "admin" ? [{ to: "/admin", label: t("Admin"), testid: "nav-admin" }] : []),
   ];
 
   return (
@@ -92,6 +102,17 @@ function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2">
+          <select
+            aria-label="Language"
+            data-testid="language-selector"
+            value={language}
+            onChange={(event) => setLanguage(event.target.value as Language)}
+            className="h-9 max-w-24 rounded-lg border border-[#E2E4DC] bg-white px-2 text-sm text-[#172B3A] outline-none focus-visible:ring-2 focus-visible:ring-[#237A62] sm:max-w-none"
+          >
+            {(Object.keys(LANGUAGE_NAMES) as Language[]).map((code) => (
+              <option key={code} value={code}>{LANGUAGE_NAMES[code]}</option>
+            ))}
+          </select>
           <Button
             variant="outline"
             size="sm"
@@ -100,7 +121,7 @@ function SiteHeader() {
             className="max-w-[220px]"
           >
             <MapPin className="size-4 shrink-0 text-[#237A62]" />
-            <span className="truncate">{localityLabel(selection)}</span>
+            <span className="truncate">{localityLabel(selection, t)}</span>
             <ChevronDown className="size-3.5 shrink-0 opacity-60" />
           </Button>
 
@@ -127,31 +148,32 @@ function SiteHeader() {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem render={<Link to="/dashboard" />}>
-                  <LayoutDashboard className="size-4" /> My Complaints
+                  <LayoutDashboard className="size-4" /> {t("My Complaints")}
                 </DropdownMenuItem>
                 {user.role === "admin" && (
                   <DropdownMenuItem render={<Link to="/admin" />}>
-                    <ShieldCheck className="size-4" /> Admin Dashboard
+                    <ShieldCheck className="size-4" /> {t("Admin dashboard")}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   data-testid="signout-button"
+                  disabled={signingOut}
                   onClick={() => {
                     void signOut();
                   }}
                 >
-                  <LogOut className="size-4" /> Sign out
+                  <LogOut className="size-4" /> {signingOut ? t("Signing out…") : t("Sign out")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <div className="hidden items-center gap-2 md:flex">
               <Button variant="ghost" size="sm" render={<Link to="/login" />} data-testid="nav-login">
-                Sign in
+                {t("Sign in")}
               </Button>
               <Button size="sm" render={<Link to="/register" />} data-testid="nav-register">
-                Get started
+                {t("Get started")}
               </Button>
             </div>
           )}
@@ -184,13 +206,14 @@ function SiteHeader() {
                 <div className="mt-3 border-t border-[#E2E4DC] pt-3">
                   {user ? (
                     <button
+                      disabled={signingOut}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#C2410C] hover:bg-[#FEE2E2]"
                       onClick={() => {
                         setMenuOpen(false);
                         void signOut();
                       }}
                     >
-                      <LogOut className="size-4" /> Sign out ({user.name})
+                      <LogOut className="size-4" /> {signingOut ? t("Signing out…") : `${t("Sign out")} (${user.name})`}
                     </button>
                   ) : (
                     <>
@@ -198,13 +221,13 @@ function SiteHeader() {
                         to="/login"
                         className="block rounded-lg px-3 py-2 text-sm font-medium text-[#172B3A] hover:bg-[#EAECE4]"
                       >
-                        Sign in
+                        {t("Sign in")}
                       </Link>
                       <Link
                         to="/register"
                         className="block rounded-lg px-3 py-2 text-sm font-medium text-[#237A62] hover:bg-[#EAECE4]"
                       >
-                        Create an account
+                        {t("Create an account")}
                       </Link>
                     </>
                   )}
@@ -220,6 +243,7 @@ function SiteHeader() {
 }
 
 function SiteFooter() {
+  const { t } = useLanguage();
   return (
     <footer className="mt-12 bg-[#172B3A] text-[#CBD5E1]">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -232,24 +256,23 @@ function SiteFooter() {
               <span className="font-heading text-base font-bold text-white">CivicConnect</span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-[#9FB2BA]">
-              A community platform for reporting neighbourhood infrastructure problems and tracking
-              their resolution — from potholes to streetlights.
+              {t("A community platform for reporting neighbourhood infrastructure problems and tracking their resolution — from potholes to streetlights.")}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-10 sm:gap-16">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-[#E6A34A]">Platform</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-[#E6A34A]">{t("Platform")}</div>
               <ul className="mt-3 space-y-2 text-sm">
-                <li><Link to="/explore" className="hover:text-white">Explore complaints</Link></li>
-                <li><Link to="/report" className="hover:text-white">Report an issue</Link></li>
-                <li><Link to="/dashboard" className="hover:text-white">My complaints</Link></li>
+                <li><Link to="/explore" className="hover:text-white">{t("Explore complaints")}</Link></li>
+                <li><Link to="/report" className="hover:text-white">{t("Report an issue")}</Link></li>
+                <li><Link to="/dashboard" className="hover:text-white">{t("My Complaints")}</Link></li>
               </ul>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-[#E6A34A]">Account</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-[#E6A34A]">{t("Account")}</div>
               <ul className="mt-3 space-y-2 text-sm">
-                <li><Link to="/login" className="hover:text-white">Sign in</Link></li>
-                <li><Link to="/register" className="hover:text-white">Create account</Link></li>
+                <li><Link to="/login" className="hover:text-white">{t("Sign in")}</Link></li>
+                <li><Link to="/register" className="hover:text-white">{t("Create account")}</Link></li>
               </ul>
             </div>
           </div>

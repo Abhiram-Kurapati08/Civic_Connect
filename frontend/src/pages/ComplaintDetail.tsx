@@ -13,9 +13,11 @@ import StatusTimeline from "@/components/StatusTimeline";
 import UpvoteButton from "@/components/UpvoteButton";
 import { apiGet } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/media";
+import { useLanguage } from "@/lib/language-context";
 import type { ComplaintDetail as ComplaintDetailType } from "@/lib/types";
 
 export default function ComplaintDetail() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const detail = useQuery({
     queryKey: ["complaint", id],
@@ -41,9 +43,9 @@ export default function ComplaintDetail() {
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <EmptyState
           icon={RotateCcw}
-          title={detail.error instanceof Error && detail.error.message.includes("404") ? "Complaint not found" : "Could not load this complaint"}
-          description="The complaint may have been removed, or the link is incorrect. Head back to the map to find what you were looking for."
-          action={<Button render={<Link to="/explore" />}><ArrowLeft className="size-4" /> Back to explore</Button>}
+          title={detail.error instanceof Error && detail.error.message.includes("404") ? t("Complaint not found") : t("Could not load this complaint")}
+          description={t("The complaint may have been removed, or the link is incorrect. Head back to the map to find what you were looking for.")}
+          action={<Button render={<Link to="/explore" />}><ArrowLeft className="size-4" /> {t("Back to explore")}</Button>}
         />
       </div>
     );
@@ -57,7 +59,7 @@ export default function ComplaintDetail() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <Button variant="ghost" size="sm" render={<Link to="/explore" />} data-testid="detail-back">
-        <ArrowLeft className="size-4" /> All complaints
+        <ArrowLeft className="size-4" /> {t("All complaints")}
       </Button>
 
       <div className="mt-4 grid gap-6 lg:grid-cols-12">
@@ -79,9 +81,9 @@ export default function ComplaintDetail() {
               <span className="flex items-center gap-1.5">
                 <User className="size-4" /> {c.reporter_name}
               </span>
-              <span>Reported {formatRelativeTime(c.created_at)}</span>
+              <span>{t("Reported")} {formatRelativeTime(c.created_at)}</span>
             </p>
-            {c.address && <p className="mt-1 text-sm text-[#52656F]">Landmark: {c.address}</p>}
+            {c.address && <p className="mt-1 text-sm text-[#52656F]">{t("Landmark")}: {c.address}</p>}
           </div>
 
           <div
@@ -90,7 +92,7 @@ export default function ComplaintDetail() {
           >
             <div className="flex items-center gap-2 text-sm text-[#52656F]">
               <ArrowBigUp className="size-5 text-[#237A62]" />
-              <span><strong className="font-heading text-base text-[#172B3A]" data-testid="detail-upvote-count">{c.upvote_count}</strong> neighbour{c.upvote_count === 1 ? "" : "s"} supported this</span>
+              <span><strong className="font-heading text-base text-[#172B3A]" data-testid="detail-upvote-count">{c.upvote_count}</strong> {t(c.upvote_count === 1 ? "neighbour supported this" : "neighbours supported this")}</span>
             </div>
             <UpvoteButton
               complaintId={c.id}
@@ -102,7 +104,7 @@ export default function ComplaintDetail() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-heading text-base">What happened</CardTitle>
+              <CardTitle className="font-heading text-base">{t("What happened")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-line text-sm leading-relaxed text-[#172B3A]" data-testid="detail-description">
@@ -115,7 +117,7 @@ export default function ComplaintDetail() {
             <Card>
               <CardHeader>
                   <CardTitle className="flex items-center gap-2 font-heading text-base">
-                    <Camera className="size-4 text-[#237A62]" /> Before: original complaint photos ({c.photos.length})
+                    <Camera className="size-4 text-[#237A62]" /> {t("Before: original complaint photos")} ({c.photos.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -129,7 +131,7 @@ export default function ComplaintDetail() {
                         <img src={photo} alt={`${c.title} — photo ${index + 1}`} className="h-36 w-full object-cover transition-transform duration-150 hover:scale-105" />
                       </DialogTrigger>
                       <DialogContent className="max-w-3xl">
-                        <DialogTitle className="sr-only">Complaint photo {index + 1}</DialogTitle>
+                        <DialogTitle className="sr-only">{t("Complaint photo")} {index + 1}</DialogTitle>
                         <img src={photo} alt={`${c.title} — photo ${index + 1}`} className="max-h-[75vh] w-full rounded-lg object-contain" />
                       </DialogContent>
                     </Dialog>
@@ -143,9 +145,9 @@ export default function ComplaintDetail() {
             <Card data-testid="detail-resolution-evidence">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-heading text-base">
-                  <Camera className="size-4 text-[#237A62]" /> After: resolution evidence
+                  <Camera className="size-4 text-[#237A62]" /> {t("After: resolution evidence")}
                 </CardTitle>
-                {c.resolved_at && <p className="text-xs text-[#52656F]">Resolved {formatDateTime(c.resolved_at)}</p>}
+                {c.resolved_at && <p className="text-xs text-[#52656F]">{t("Resolved")} {formatDateTime(c.resolved_at)}</p>}
               </CardHeader>
               <CardContent className="space-y-3">
                 <Dialog>
@@ -153,7 +155,7 @@ export default function ComplaintDetail() {
                     <img src={c.resolution_photo} alt={`${c.title} — after resolution`} className="max-h-72 w-full object-cover" />
                   </DialogTrigger>
                   <DialogContent className="max-w-3xl">
-                    <DialogTitle className="sr-only">After resolution photo</DialogTitle>
+                    <DialogTitle className="sr-only">{t("After resolution photo")}</DialogTitle>
                     <img src={c.resolution_photo} alt={`${c.title} — after resolution`} className="max-h-[75vh] w-full rounded-lg object-contain" />
                   </DialogContent>
                 </Dialog>
@@ -174,15 +176,15 @@ export default function ComplaintDetail() {
               className="h-64 w-full rounded-xl border border-[#E2E4DC]"
             />
             <p className="mt-2 text-xs text-[#52656F]" data-testid="detail-coordinates">
-              Saved location: {c.lat.toFixed(6)}, {c.lng.toFixed(6)}
+              {t("Saved location")}: {c.lat.toFixed(6)}, {c.lng.toFixed(6)}
               {c.address ? ` · ${c.address}` : ""}
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-heading text-base">Official status history</CardTitle>
-              <p className="text-xs text-[#52656F]">Last updated {formatDateTime(c.updated_at)}</p>
+              <CardTitle className="font-heading text-base">{t("Official status history")}</CardTitle>
+              <p className="text-xs text-[#52656F]">{t("Last updated")} {formatDateTime(c.updated_at)}</p>
             </CardHeader>
             <CardContent data-testid="detail-timeline">
               <StatusTimeline history={c.history} />

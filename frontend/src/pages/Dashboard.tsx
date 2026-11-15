@@ -7,9 +7,11 @@ import ComplaintCard from "@/components/ComplaintCard";
 import EmptyState from "@/components/EmptyState";
 import { apiGet } from "@/lib/api";
 import { useMe } from "@/lib/useAuth";
+import { useLanguage } from "@/lib/language-context";
 import type { ComplaintPage } from "@/lib/types";
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const { data: user, isLoading } = useMe();
   const mine = useQuery({
     queryKey: ["myComplaints"],
@@ -30,9 +32,9 @@ export default function Dashboard() {
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <EmptyState
           icon={LogIn}
-          title="Sign in to see your complaints"
-          description="Your dashboard lists every issue you reported and how the ward office is progressing on each."
-          action={<Button render={<Link to="/login?next=/dashboard" />} data-testid="dashboard-signin-cta">Sign in</Button>}
+          title={t("Sign in to see your complaints")}
+          description={t("Your dashboard lists every issue you reported and how the ward office is progressing on each.")}
+          action={<Button render={<Link to="/login?next=/dashboard" />} data-testid="dashboard-signin-cta">{t("Sign in")}</Button>}
         />
       </div>
     );
@@ -42,9 +44,9 @@ export default function Dashboard() {
   const resolvedCount = items.filter((c) => c.status === "resolved").length;
   const supports = items.reduce((sum, c) => sum + c.upvote_count, 0);
   const stats = [
-    { label: "Complaints filed", value: mine.data?.total ?? 0, icon: Megaphone, testid: "dashboard-stat-filed" },
-    { label: "Resolved", value: resolvedCount, icon: CheckCircle2, testid: "dashboard-stat-resolved" },
-    { label: "Supports received", value: supports, icon: ArrowBigUp, testid: "dashboard-stat-supports" },
+    { label: t("Complaints filed"), value: mine.data?.total ?? 0, icon: Megaphone, testid: "dashboard-stat-filed" },
+    { label: t("Resolved"), value: resolvedCount, icon: CheckCircle2, testid: "dashboard-stat-resolved" },
+    { label: t("Supports received"), value: supports, icon: ArrowBigUp, testid: "dashboard-stat-supports" },
   ];
 
   return (
@@ -52,14 +54,14 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-bold text-[#172B3A]" data-testid="dashboard-greeting">
-            Hello, {user.name.split(" ")[0]}
+            {t("Hello,")} {user.name.split(" ")[0]}
           </h1>
           <p className="mt-1 text-sm text-[#52656F]">
-            Every issue you have put on the record, with its live official status.
+            {t("Every issue you have put on the record, with its live official status.")}
           </p>
         </div>
         <Button render={<Link to="/report" />} data-testid="dashboard-report-cta">
-          <Megaphone className="size-4" /> Report a new issue
+          <Megaphone className="size-4" /> {t("Report a new issue")}
         </Button>
       </div>
 
@@ -73,7 +75,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <h2 className="mt-10 font-heading text-lg font-bold text-[#172B3A]">My complaints</h2>
+      <h2 className="mt-10 font-heading text-lg font-bold text-[#172B3A]">{t("My complaints")}</h2>
       <div className="mt-4">
         {mine.isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -82,9 +84,9 @@ export default function Dashboard() {
         ) : items.length === 0 ? (
           <EmptyState
             icon={NotebookPen}
-            title="You haven't reported anything yet"
-            description="Spot a pothole on your street? It takes two minutes to put it on the record — pin it, photograph it, submit."
-            action={<Button render={<Link to="/report" />}>Report your first issue</Button>}
+            title={t("You haven't reported anything yet")}
+            description={t("Spot a pothole on your street? It takes two minutes to put it on the record — pin it, photograph it, submit.")}
+            action={<Button render={<Link to="/report" />}>{t("Report your first issue")}</Button>}
             testId="dashboard-empty"
           />
         ) : (
