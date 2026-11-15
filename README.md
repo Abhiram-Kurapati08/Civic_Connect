@@ -2,6 +2,19 @@
 
 CivicConnect is a locality-based civic issue reporting app. Residents can report and map neighbourhood problems, support complaints, and follow status updates. Municipal administrators can manage reports and attach resolution evidence.
 
+## Application screenshots
+
+<table>
+  <tr>
+    <td align="center"><strong>Home and locality overview</strong><br><img src="docs/screenshots/home.png" alt="CivicConnect home page with locality map and issue reporting links" width="100%"></td>
+    <td align="center"><strong>Categories and reporting workflow</strong><br><img src="docs/screenshots/home-workflow.png" alt="Issue categories and the three-step reporting workflow" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Explore issues on the map</strong><br><img src="docs/screenshots/explore-map.png" alt="Explore page showing civic issue markers on a map with a complaint list" width="100%"></td>
+    <td align="center"><strong>Report an issue</strong><br><img src="docs/screenshots/report-issue.png" alt="Report form with issue details and category selection" width="100%"></td>
+  </tr>
+</table>
+
 ## Stack
 
 - Frontend: React 19, TypeScript, Vite, TanStack Query, Leaflet
