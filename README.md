@@ -2,6 +2,8 @@
 
 CivicConnect is a locality-based civic issue reporting app. Residents can report and map neighbourhood problems, support complaints, and follow status updates. Municipal administrators can manage reports and attach resolution evidence.
 
+**Live demo:** [Open CivicConnect on Emergent](https://fixmystreet-15.emergent.host/?utm_source=share)
+
 ## Application screenshots
 
 <table>
